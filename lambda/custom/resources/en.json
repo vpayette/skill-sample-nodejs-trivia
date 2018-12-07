@@ -1,0 +1,215 @@
+{
+  "GAME_NAME": "Reindeer Trivia",
+  "HELP_MESSAGE": "I will ask you {numberOfQuestions, plural, =1 {one multiple choice question} other {# multiple choice questions}}. Respond with the number of the answer. For example, say one, two, three, or four. To start a new game at any time, say, start game. ",
+  "REPEAT_QUESTION_MESSAGE": "To repeat the last question, say, repeat.",
+  "ASK_MESSAGE_START": "Would you like to start playing?",
+  "HELP_REPROMPT": "To give an answer to a question, respond with the number of the answer.",
+  "STOP_MESSAGE": "Would you like to keep playing?",
+  "CANCEL_MESSAGE": "Ok, let's play again soon.",
+  "NO_MESSAGE": "Ok, we'll play another time. Goodbye!",
+  "ERROR_MESSAGE": "Sorry, I can't understand the command. Please say again.",
+  "TRIVIA_UNHANDLED": "Try saying a number between 1 and {answerCount}",
+  "HELP_UNHANDLED": "Say yes to continue, or no to end the game.",
+  "START_UNHANDLED": "Say start to start a new game.",
+  "NEW_GAME_MESSAGE": "Welcome to {gameName}.",
+  "WELCOME_MESSAGE": "I will ask you {numberOfQuestions, plural, =1 {one question} other {# questions}}; try to get as many right as you can. Just say the number of the answer. Let's begin!",
+  "ANSWER_CORRECT_MESSAGE": {
+    "v1": "Correct.",
+    "v2": "Right!",
+    "v3": "That's correct!",
+    "v4": "You got it!"
+  },
+  "ANSWER_WRONG_MESSAGE": {
+    "v1": "Wrong.",
+    "v2": "Nope.",
+    "v3": "Sorry, that's the wrong answer.",
+    "v4": "Sorry, you did't get that one."
+  },
+  "CORRECT_ANSWER_MESSAGE": "The correct answer is {answerIndex}: {answerText}. ",
+  "TELL_QUESTION_MESSAGE": "Question {questionNumber}. {question} 1. {answer_1} 2. {answer_2} 3. {answer_3} 4. {answer_4}",
+  "GAME_OVER_MESSAGE": "You got {score} out of {numberOfQuestions, plural, =1 {one question} other {# questions}} correct. Thank you for playing!",
+  "SCORE_IS_MESSAGE": "Your score is {score}.",
+  "QUESTIONS": [
+    {
+      "Reindeer have very thick coats, how many hairs per square inch do they have?": [
+        "13,000",
+        "1,200",
+        "5,000",
+        "700",
+        "1,000",
+        "120,000"
+      ]
+    },
+    {
+      "The 1964 classic Rudolph The Red Nosed Reindeer was filmed in? ": [
+        "Japan",
+        "United States",
+        "Finland",
+        "Germany",
+        "Canada",
+        "Norway",
+        "France"
+      ]
+    },
+    {
+      "Santas reindeer are cared for by one of the Christmas elves, what is his name?": [
+        "Wunorse Openslae",
+        "Alabaster Snowball",
+        "Bushy Evergreen",
+        "Pepper Minstix"
+      ]
+    },
+    {
+      "If all of Santas reindeer had antlers while pulling his Christmas sleigh, they would all be? ": [
+        "Girls",
+        "Boys",
+        "Girls and boys",
+        "No way to tell"
+      ]
+    },
+    {
+      "What do Reindeer eat?": [
+        "Lichen",
+        "Grasses",
+        "Leaves",
+        "Berries"
+      ]
+    },
+    {
+      "What of the following is not true?": [
+        "Caribou live on all continents",
+        "Both reindeer and Caribou are the same species",
+        "Caribou are bigger than reindeer",
+        "Reindeer live in Scandinavia and Russia"
+      ]
+    },
+    {
+      "In what year did Rudolph make his television debut?": [
+        "1964",
+        "1979",
+        "2000",
+        "1956"
+      ]
+    },
+    {
+      "Who was the voice of Rudolph in the 1964 classic?": [
+        "Billie Mae Richards",
+        "Burl Ives",
+        "Paul Soles",
+        "Lady Gaga"
+      ]
+    },
+    {
+      "In 1939 what retailer used the story of Rudolph the Red Nose Reindeer?": [
+        "Montgomery Ward",
+        "Sears",
+        "Macys",
+        "Kmart"
+      ]
+    },
+    {
+      "Santa's reindeer named Donner was originally named what?": [
+        "Dunder",
+        "Donny",
+        "Dweedle",
+        "Dreamy"
+      ]
+    },
+    {
+      "Who invented the story of Rudolph?": [
+        "Robert May",
+        "Johnny Marks",
+        "Santa",
+        "J K Rowling"
+      ]
+    },
+    {
+      "In what location will you not find reindeer?": [
+        "North Pole",
+        "Lapland",
+        "Korvatunturi mountain",
+        "Finland"
+      ]
+    },
+    {
+      "What Makes Santa's Reindeer Fly?": [
+        "Magical Reindeer Dust",
+        "Fusion",
+        "Amanita muscaria",
+        "Elves"
+      ]
+    },
+    {
+      "Including Rudolph, how many reindeer hooves are there?": [
+        "36",
+        "24",
+        "16",
+        "8"
+      ]
+    },
+    {
+      "Santa only has one female reindeer, Which one is it?": [
+        "Vixen",
+        "Clarice",
+        "Cupid",
+        "Dasher"
+      ]
+    },
+    {
+      "In the 1964 classic Rudolph The Red Nosed Reindeer, what was the snowman narrators name?": [
+        "Sam",
+        "Frosty",
+        "Burl",
+        "Snowy"
+      ]
+    },
+    {
+      "What was Rudolph's father's name?": [
+        "Donner",
+        "Dasher",
+        "Blixen",
+        "Comet"
+      ]
+    },
+    {
+      "In the 1964 movie, What was the name of the coach of the Reindeer Games?": [
+        "Comet",
+        "Blixen",
+        "Donner",
+        "Dasher"
+      ]
+    },
+    {
+      "In the 1964 movie, what is the name of the deer that Rudolph befriends at the reindeer games?": [
+        "Fireball",
+        "Clarice",
+        "Jumper",
+        "Vixen"
+      ]
+    },
+    {
+      "In the 1964 movie, How did Donner, Rudolph's father, try to hide Rudolph's nose?": [
+        "Black mud",
+        "Bag",
+        "Pillow case",
+        "Sock"
+      ]
+    },
+    {
+      "In the 1964 movie, what does the Misfit Elf want to be instead of a Santa Elf?": [
+        "Dentist",
+        "Reindeer",
+        "Toy maker",
+        "Candlestick maker"
+      ]
+    },
+    {
+      "In the 1964 movie,what was the Bumble's one weakness?": [
+        "Could not swim",
+        "Always hungry",
+        "Candy canes",
+        "Cross eyed"
+      ]
+    }
+  ]
+}

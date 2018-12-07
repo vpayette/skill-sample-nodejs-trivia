@@ -2,11 +2,12 @@
 /* eslint-disable  no-console */
 
 const Alexa = require('ask-sdk-core');
-const questions = require('./questions');
-const i18n = require('i18next');
-const sprintf = require('i18next-sprintf-postprocessor');
+const Jargon = require('@jargon/alexa-skill-sdk');
 
+// Note that if you change this value you also need to update TELL_QUESTION_MESSAGE
+// in all resources to have the correct number of answer placeholders
 const ANSWER_COUNT = 4;
+
 const GAME_LENGTH = 5;
 
 function populateGameQuestions(translatedQuestions) {
@@ -80,14 +81,20 @@ function isAnswerSlotValid(intent) {
     && parseInt(intent.slots.Answer.value, 10) > 0;
 }
 
-function handleUserGuess(userGaveUp, handlerInput) {
-  const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
+function buildQuestionRenderItem(questionNumber, question, answers) {
+  let args = { questionNumber: questionNumber, question: question }
+  for (let i = 0; i < ANSWER_COUNT; i += 1) {
+    args[`answer_${i + 1}`] = answers[i]
+  }
+
+  return ri('TELL_QUESTION_MESSAGE', args)
+}
+
+async function handleUserGuess(userGaveUp, handlerInput) {
+  const { requestEnvelope, attributesManager, jrb } = handlerInput;
   const { intent } = requestEnvelope.request;
 
   const answerSlotValid = isAnswerSlotValid(intent);
-
-  let speechOutput = '';
-  let speechOutputAnalysis = '';
 
   const sessionAttributes = attributesManager.getSessionAttributes();
   const gameQuestions = sessionAttributes.questions;
@@ -95,41 +102,32 @@ function handleUserGuess(userGaveUp, handlerInput) {
   let currentScore = parseInt(sessionAttributes.score, 10);
   let currentQuestionIndex = parseInt(sessionAttributes.currentQuestionIndex, 10);
   const { correctAnswerText } = sessionAttributes;
-  const requestAttributes = attributesManager.getRequestAttributes();
-  const translatedQuestions = requestAttributes.t('QUESTIONS');
-
 
   if (answerSlotValid
     && parseInt(intent.slots.Answer.value, 10) === sessionAttributes.correctAnswerIndex) {
     currentScore += 1;
-    speechOutputAnalysis = requestAttributes.t('ANSWER_CORRECT_MESSAGE');
+    jrb.speak(ri('ANSWER_CORRECT_MESSAGE'));
   } else {
     if (!userGaveUp) {
-      speechOutputAnalysis = requestAttributes.t('ANSWER_WRONG_MESSAGE');
+      jrb.speak(ri('ANSWER_WRONG_MESSAGE'));
     }
 
-    speechOutputAnalysis += requestAttributes.t(
-      'CORRECT_ANSWER_MESSAGE',
-      correctAnswerIndex,
-      correctAnswerText
-    );
+    jrb.speak(ri('CORRECT_ANSWER_MESSAGE', { answerIndex: correctAnswerIndex, answerText: correctAnswerText }))
   }
 
   // Check if we can exit the game session after GAME_LENGTH questions (zero-indexed)
   if (sessionAttributes.currentQuestionIndex === GAME_LENGTH - 1) {
-    speechOutput = userGaveUp ? '' : requestAttributes.t('ANSWER_IS_MESSAGE');
-    speechOutput += speechOutputAnalysis + requestAttributes.t(
-      'GAME_OVER_MESSAGE',
-      currentScore.toString(),
-      GAME_LENGTH.toString()
-    );
-
-    return responseBuilder
-      .speak(speechOutput)
+    return jrb
+      .speak(ri('GAME_OVER_MESSAGE'), { score: currentScore, numberOfQuestions: GAME_LENGTH })
       .getResponse();
   }
+
+  jrb.speak(ri('SCORE_IS_MESSAGE', { score: currentScore }));
+
   currentQuestionIndex += 1;
   correctAnswerIndex = Math.floor(Math.random() * (ANSWER_COUNT));
+
+  const translatedQuestions = await handlerInput.jrm.renderObject(ri('QUESTIONS'));
   const spokenQuestion = Object.keys(translatedQuestions[gameQuestions[currentQuestionIndex]])[0];
   const roundAnswers = populateRoundAnswers(
     gameQuestions,
@@ -137,27 +135,17 @@ function handleUserGuess(userGaveUp, handlerInput) {
     correctAnswerIndex,
     translatedQuestions
   );
+
   const questionIndexForSpeech = currentQuestionIndex + 1;
-  let repromptText = requestAttributes.t(
-    'TELL_QUESTION_MESSAGE',
-    questionIndexForSpeech.toString(),
-    spokenQuestion
-  );
-
-  for (let i = 0; i < ANSWER_COUNT; i += 1) {
-    repromptText += `${i + 1}. ${roundAnswers[i]}. `;
-  }
-
-  speechOutput += userGaveUp ? '' : requestAttributes.t('ANSWER_IS_MESSAGE');
-  speechOutput += speechOutputAnalysis
-    + requestAttributes.t('SCORE_IS_MESSAGE', currentScore.toString())
-    + repromptText;
+  const questionRI = buildQuestionRenderItem(questionIndexForSpeech, spokenQuestion, roundAnswers)
+  jrb.speak(questionRI).reprompt(questionRI)
 
   const translatedQuestion = translatedQuestions[gameQuestions[currentQuestionIndex]];
+  const questionText = await handlerInput.jrm.render(questionRI)
 
   Object.assign(sessionAttributes, {
-    speechOutput: repromptText,
-    repromptText,
+    speechOutput: questionText,
+    repromptText: questionText,
     currentQuestionIndex,
     correctAnswerIndex: correctAnswerIndex + 1,
     questions: gameQuestions,
@@ -165,152 +153,78 @@ function handleUserGuess(userGaveUp, handlerInput) {
     correctAnswerText: translatedQuestion[Object.keys(translatedQuestion)[0]][0]
   });
 
-  return responseBuilder.speak(speechOutput)
-    .reprompt(repromptText)
-    .withSimpleCard(requestAttributes.t('GAME_NAME'), repromptText)
+  return jrb
+    .reprompt(questionRI)
+    .withSimpleCard(ri('GAME_NAME'), questionRI)
     .getResponse();
 }
 
-function startGame(newGame, handlerInput) {
-  const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
-  let speechOutput = newGame
-    ? requestAttributes.t('NEW_GAME_MESSAGE', requestAttributes.t('GAME_NAME'))
-      + requestAttributes.t('WELCOME_MESSAGE', GAME_LENGTH.toString())
-    : '';
-  const translatedQuestions = requestAttributes.t('QUESTIONS');
-  const gameQuestions = populateGameQuestions(translatedQuestions);
+async function startGame(newGame, handlerInput) {
+  const { jrb, jrm } = handlerInput
+
+  if (newGame) {
+    jrb.speak(ri('NEW_GAME_MESSAGE', { gameName: ri('GAME_NAME') }))
+  } else {
+    jrb.speak(ri('WELCOME_MESSAGE', { numberOfQuestions: GAM }))
+  }
+
+  const currentQuestionIndex = 0;
   const correctAnswerIndex = Math.floor(Math.random() * (ANSWER_COUNT));
 
+  const translatedQuestions = await jrb.renderObject(ri('QUESTIONS'));
+  const gameQuestions = populateGameQuestions(translatedQuestions);
+
+  const spokenQuestion = Object.keys(translatedQuestions[gameQuestions[currentQuestionIndex]])[0];
   const roundAnswers = populateRoundAnswers(
     gameQuestions,
-    0,
+    currentQuestionIndex,
     correctAnswerIndex,
     translatedQuestions
   );
-  const currentQuestionIndex = 0;
-  const spokenQuestion = Object.keys(translatedQuestions[gameQuestions[currentQuestionIndex]])[0];
-  let repromptText = requestAttributes.t('TELL_QUESTION_MESSAGE', '1', spokenQuestion);
-  for (let i = 0; i < ANSWER_COUNT; i += 1) {
-    repromptText += `${i + 1}. ${roundAnswers[i]}. `;
-  }
 
-  speechOutput += repromptText;
-  const sessionAttributes = {};
+  const questionIndexForSpeech = currentQuestionIndex + 1;
+  const questionRI = buildQuestionRenderItem(questionIndexForSpeech, spokenQuestion, roundAnswers)
+  jrb.speak(questionRI).reprompt(questionRI)
 
   const translatedQuestion = translatedQuestions[gameQuestions[currentQuestionIndex]];
+  const questionText = await handlerInput.jrm.render(questionRI)
 
-  Object.assign(sessionAttributes, {
-    speechOutput: repromptText,
-    repromptText,
-    currentQuestionIndex,
+  const sessionAttributes = {
+    speechOutput: questionText,
+    repromptText: questionText,
+    currentQuestionIndex: currentQuestionIndex,
     correctAnswerIndex: correctAnswerIndex + 1,
     questions: gameQuestions,
-    score: 0,
+    score: currentScore,
     correctAnswerText: translatedQuestion[Object.keys(translatedQuestion)[0]][0]
-  });
-
+  };
   handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
-  return handlerInput.responseBuilder
-    .speak(speechOutput)
-    .reprompt(repromptText)
-    .withSimpleCard(requestAttributes.t('GAME_NAME'), repromptText)
+  return jrb
+    .reprompt(questionRI)
+    .withSimpleCard(ri('GAME_NAME'), questionRI)
     .getResponse();
 }
 
 function helpTheUser(newGame, handlerInput) {
-  const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
-  const askMessage = newGame
-    ? requestAttributes.t('ASK_MESSAGE_START')
-    : requestAttributes.t('REPEAT_QUESTION_MESSAGE') + requestAttributes.t('STOP_MESSAGE');
-  const speechOutput = requestAttributes.t('HELP_MESSAGE', GAME_LENGTH) + askMessage;
-  const repromptText = requestAttributes.t('HELP_REPROMPT') + askMessage;
+  const { jrb } = handlerInput
 
-  return handlerInput.responseBuilder.speak(speechOutput).reprompt(repromptText).getResponse();
+  jrb.speak(ri('HELP_MESSAGE', { numberOfQuestions: GAME_LENGTH }))
+  jrb.reprompt(ri('HELP_REPROMPT'))
+
+  if (newGame) {
+    const start = ri('ASK_MESSAGE_START')
+    jrb.speak(start).reprompt(start)
+  } else {
+    const repeat = ri('REPEAT_QUESTION_MESSAGE')
+    const stop = ri('STOP_MESSAGE')
+
+    jrb.speak(repeat).speak(stop)
+    jrb.reprompt(repeat).reprompt(stop)
+  }
+
+  return jrb.getResponse()
 }
-
-/* jshint -W101 */
-const languageString = {
-  en: {
-    translation: {
-      QUESTIONS: questions.QUESTIONS_EN_US,
-      GAME_NAME: 'Reindeer Trivia',
-      HELP_MESSAGE: 'I will ask you %s multiple choice questions. Respond with the number of the answer. For example, say one, two, three, or four. To start a new game at any time, say, start game. ',
-      REPEAT_QUESTION_MESSAGE: 'To repeat the last question, say, repeat. ',
-      ASK_MESSAGE_START: 'Would you like to start playing?',
-      HELP_REPROMPT: 'To give an answer to a question, respond with the number of the answer. ',
-      STOP_MESSAGE: 'Would you like to keep playing?',
-      CANCEL_MESSAGE: 'Ok, let\'s play again soon.',
-      NO_MESSAGE: 'Ok, we\'ll play another time. Goodbye!',
-      TRIVIA_UNHANDLED: 'Try saying a number between 1 and %s',
-      HELP_UNHANDLED: 'Say yes to continue, or no to end the game.',
-      START_UNHANDLED: 'Say start to start a new game.',
-      NEW_GAME_MESSAGE: 'Welcome to %s. ',
-      WELCOME_MESSAGE: 'I will ask you %s questions, try to get as many right as you can. Just say the number of the answer. Let\'s begin. ',
-      ANSWER_CORRECT_MESSAGE: 'correct. ',
-      ANSWER_WRONG_MESSAGE: 'wrong. ',
-      CORRECT_ANSWER_MESSAGE: 'The correct answer is %s: %s. ',
-      ANSWER_IS_MESSAGE: 'That answer is ',
-      TELL_QUESTION_MESSAGE: 'Question %s. %s ',
-      GAME_OVER_MESSAGE: 'You got %s out of %s questions correct. Thank you for playing!',
-      SCORE_IS_MESSAGE: 'Your score is %s. '
-    },
-  },
-  'en-US': {
-    translation: {
-      QUESTIONS: questions.QUESTIONS_EN_US,
-      GAME_NAME: 'American Reindeer Trivia'
-    },
-  },
-  'en-GB': {
-    translation: {
-      QUESTIONS: questions.QUESTIONS_EN_GB,
-      GAME_NAME: 'British Reindeer Trivia'
-    },
-  },
-  de: {
-    translation: {
-      QUESTIONS: questions.QUESTIONS_DE_DE,
-      GAME_NAME: 'Wissenswertes über Rentiere in Deutsch',
-      HELP_MESSAGE: 'Ich stelle dir %s Multiple-Choice-Fragen. Antworte mit der Zahl, die zur richtigen Antwort gehört. Sage beispielsweise eins, zwei, drei oder vier. Du kannst jederzeit ein neues Spiel beginnen, sage einfach „Spiel starten“. ',
-      REPEAT_QUESTION_MESSAGE: 'Wenn die letzte Frage wiederholt werden soll, sage „Wiederholen“ ',
-      ASK_MESSAGE_START: 'Möchten Sie beginnen?',
-      HELP_REPROMPT: 'Wenn du eine Frage beantworten willst, antworte mit der Zahl, die zur richtigen Antwort gehört. ',
-      STOP_MESSAGE: 'Möchtest du weiterspielen?',
-      CANCEL_MESSAGE: 'OK, dann lass uns bald mal wieder spielen.',
-      NO_MESSAGE: 'OK, spielen wir ein andermal. Auf Wiedersehen!',
-      TRIVIA_UNHANDLED: 'Sagt eine Zahl beispielsweise zwischen 1 und %s',
-      HELP_UNHANDLED: 'Sage ja, um fortzufahren, oder nein, um das Spiel zu beenden.',
-      START_UNHANDLED: 'Du kannst jederzeit ein neues Spiel beginnen, sage einfach „Spiel starten“.',
-      NEW_GAME_MESSAGE: 'Willkommen bei %s. ',
-      WELCOME_MESSAGE: 'Ich stelle dir %s Fragen und du versuchst, so viele wie möglich richtig zu beantworten. Sage einfach die Zahl, die zur richtigen Antwort passt. Fangen wir an. ',
-      ANSWER_CORRECT_MESSAGE: 'Richtig. ',
-      ANSWER_WRONG_MESSAGE: 'Falsch. ',
-      CORRECT_ANSWER_MESSAGE: 'Die richtige Antwort ist %s: %s. ',
-      ANSWER_IS_MESSAGE: 'Diese Antwort ist ',
-      TELL_QUESTION_MESSAGE: 'Frage %s. %s ',
-      GAME_OVER_MESSAGE: 'Du hast %s von %s richtig beantwortet. Danke fürs Mitspielen!',
-      SCORE_IS_MESSAGE: 'Dein Ergebnis ist %s. '
-    },
-  },
-};
-
-
-const LocalizationInterceptor = {
-  process(handlerInput) {
-    const localizationClient = i18n.use(sprintf).init({
-      lng: handlerInput.requestEnvelope.request.locale,
-      overloadTranslationOptionHandler: sprintf.overloadTranslationOptionHandler,
-      resources: languageString,
-      returnObjects: true
-    });
-
-    const attributes = handlerInput.attributesManager.getRequestAttributes();
-    attributes.t = function (...args) {
-      return localizationClient.t(...args);
-    };
-  },
-};
 
 const LaunchRequest = {
   canHandle(handlerInput) {
@@ -346,22 +260,25 @@ const UnhandledIntent = {
   },
   handle(handlerInput) {
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
+
     if (Object.keys(sessionAttributes).length === 0) {
-      const speechOutput = requestAttributes.t('START_UNHANDLED');
-      return handlerInput.attributesManager
+      const speechOutput = ri('START_UNHANDLED');
+      return handlerInput.jrb
         .speak(speechOutput)
         .reprompt(speechOutput)
         .getResponse();
     } else if (sessionAttributes.questions) {
-      const speechOutput = requestAttributes.t('TRIVIA_UNHANDLED', ANSWER_COUNT.toString());
-      return handlerInput.attributesManager
+      const speechOutput = ri('TRIVIA_UNHANDLED', { answerCount: ANSWER_COUNT });
+      return handlerInput.jrb
         .speak(speechOutput)
         .reprompt(speechOutput)
         .getResponse();
     }
-    const speechOutput = requestAttributes.t('HELP_UNHANDLED');
-    return handlerInput.attributesManager.speak(speechOutput).reprompt(speechOutput).getResponse();
+    const speechOutput = ri('HELP_UNHANDLED');
+    return handlerInput.jrb
+      .speak(speechOutput)
+      .reprompt(speechOutput)
+      .getResponse();
   },
 };
 
@@ -379,7 +296,7 @@ const SessionEndedRequest = {
 const AnswerIntent = {
   canHandle(handlerInput) {
     return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && (handlerInput.requestEnvelope.request.intent.name === 'AnswerIntent'
+      && (handlerInput.requestEnvelope.request.intent.name === 'AnswerIntent'
         || handlerInput.requestEnvelope.request.intent.name === 'DontKnowIntent');
   },
   handle(handlerInput) {
@@ -392,12 +309,18 @@ const AnswerIntent = {
 
 const RepeatIntent = {
   canHandle(handlerInput) {
+    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes()
     return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.RepeatIntent';
+      && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.RepeatIntent'
+      && sessionAttributes.speechOutput
+      && sessionAttributes.repromptText;
   },
   handle(handlerInput) {
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-    return handlerInput.responseBuilder.speak(sessionAttributes.speechOutput)
+    // Note that this content is already localized, so we safely use the standard
+    // response builder
+    return handlerInput.responseBuilder
+      .speak(sessionAttributes.speechOutput)
       .reprompt(sessionAttributes.repromptText)
       .getResponse();
   },
@@ -405,13 +328,19 @@ const RepeatIntent = {
 
 const YesIntent = {
   canHandle(handlerInput) {
+    const sessionAttributes = handlerInput.attributesManager.getSessionAttributes()
     return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.YesIntent';
+      && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.YesIntent'
+      && sessionAttributes.speechOutput
+      && sessionAttributes.repromptText;
   },
   handle(handlerInput) {
     const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+    // Note that this content is already localized, so we safely use the standard
+    // response builder
     if (sessionAttributes.questions) {
-      return handlerInput.responseBuilder.speak(sessionAttributes.speechOutput)
+      return handlerInput.responseBuilder
+        .speak(sessionAttributes.speechOutput)
         .reprompt(sessionAttributes.repromptText)
         .getResponse();
     }
@@ -423,13 +352,13 @@ const YesIntent = {
 const StopIntent = {
   canHandle(handlerInput) {
     return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-        && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.StopIntent';
+      && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.StopIntent';
   },
   handle(handlerInput) {
-    const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
-    const speechOutput = requestAttributes.t('STOP_MESSAGE');
+    const speechOutput = ri('STOP_MESSAGE');
 
-    return handlerInput.responseBuilder.speak(speechOutput)
+    return handlerInput.jrb
+      .speak(speechOutput)
       .reprompt(speechOutput)
       .getResponse();
   },
@@ -441,10 +370,10 @@ const CancelIntent = {
       && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.CancelIntent';
   },
   handle(handlerInput) {
-    const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
-    const speechOutput = requestAttributes.t('CANCEL_MESSAGE');
+    const speechOutput = ri('CANCEL_MESSAGE');
 
-    return handlerInput.responseBuilder.speak(speechOutput)
+    return handlerInput.jrb
+      .speak(speechOutput)
       .getResponse();
   },
 };
@@ -455,9 +384,10 @@ const NoIntent = {
       && handlerInput.requestEnvelope.request.intent.name === 'AMAZON.NoIntent';
   },
   handle(handlerInput) {
-    const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
-    const speechOutput = requestAttributes.t('NO_MESSAGE');
-    return handlerInput.responseBuilder.speak(speechOutput).getResponse();
+    const speechOutput = ri('NO_MESSAGE');
+    return handlerInput.jrb
+      .speak(speechOutput)
+      .getResponse();
   },
 };
 
@@ -468,14 +398,15 @@ const ErrorHandler = {
   handle(handlerInput, error) {
     console.log(`Error handled: ${error.message}`);
 
-    return handlerInput.responseBuilder
-      .speak('Sorry, I can\'t understand the command. Please say again.')
-      .reprompt('Sorry, I can\'t understand the command. Please say again.')
+    const speechOutput = ri('ERROR_MESSAGE');
+    return handlerInput.jrb
+      .speak(speechOutput)
+      .reprompt(speechOutput)
       .getResponse();
   },
 };
 
-const skillBuilder = Alexa.SkillBuilders.custom();
+const skillBuilder = new Jargon.JargonSkillBuilder({ mergeSpeakAndReprompt: true }).wrap(Alexa.SkillBuilders.custom());
 exports.handler = skillBuilder
   .addRequestHandlers(
     LaunchRequest,
@@ -489,6 +420,5 @@ exports.handler = skillBuilder
     SessionEndedRequest,
     UnhandledIntent
   )
-  .addRequestInterceptors(LocalizationInterceptor)
   .addErrorHandlers(ErrorHandler)
   .lambda();

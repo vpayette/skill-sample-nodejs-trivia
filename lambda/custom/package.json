@@ -9,9 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@jargon/alexa-skill-sdk": "1.x",
     "ask-sdk-core": "^2.0.0",
-    "ask-sdk-model": "^1.0.0",
-    "i18next": "^10.6.0",
-    "i18next-sprintf-postprocessor": "^0.2.2"
+    "ask-sdk-model": "^1.0.0"
   }
 }
