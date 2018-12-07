@@ -16,29 +16,21 @@ This readme assumes you have your developer environment ready to go and that you
 ### Installation
 1. **Make sure** you are running the latest version of the CLI
 
-	```bash
-	$ npm update -g ask-cli
-	```
+        ```bash
+        $ npm update -g ask-cli
+        ```
 
-2. **Clone** the repository.
+1. Create a new skill from the template
+``` bash
+$ ask new --url https://github.com/JargonInc/skill-sample-nodejs-trivia.git
+```
 
-	```bash
-	$ git clone https://github.com/alexa/skill-sample-nodejs-trivia/
-	```
+1. If it's your first time using it, **initialize** the [ASK CLI](https://developer.amazon.com/docs/smapi/quick-start-alexa-skills-kit-command-line-interface.html) by navigating into the skill directory and running npm command: `ask init`. Follow the prompts.
 
-3. If it's your first time using it, **initiatialize** the [ASK CLI](https://developer.amazon.com/docs/smapi/quick-start-alexa-skills-kit-command-line-interface.html?&sc_category=Owned&sc_channel=RD&sc_campaign=Evangelism2018&sc_publisher=github&sc_content=Content&sc_detail=trivia-nodejs-V2_CLI-1&sc_funnel=Convert&sc_country=WW&sc_medium=Owned_RD_Evangelism2018_github_Content_trivia-nodejs-V2_CLI-1_Convert_WW_beginnersdevs&sc_segment=beginnersdevs) by navigating into the repository and running npm command: `ask init`. Follow the prompts.
-
-	```bash
-	$ cd skill-sample-nodejs-trivia
-	$ ask init
-	```
-
-4. Install npm dependencies by navigating into the `/lambda/custom` directory and running the npm command: `npm install --save`
-
-	```bash
-	$ cd lambda/custom
-	$ npm install
-	```
+  ```bash
+  $ cd skill-sample-nodejs-trivia
+  $ ask init
+  ```
 
 ### Deployment
 
@@ -79,11 +71,11 @@ ASK CLI **will create the skill and the lambda function for you**. The Lambda fu
 
    Remember than many information are locale-specific and must be changed for each locale (en-GB and en-US)
 
-   See the Skill [Manifest Documentation](https://developer.amazon.com/docs/smapi/skill-manifest.html?&sc_category=Owned&sc_channel=RD&sc_campaign=Evangelism2018&sc_publisher=github&sc_content=Survey&sc_detail=trivia-nodejs-V2_CLI-3&sc_funnel=Convert&sc_country=WW&sc_medium=Owned_RD_Evangelism2018_github_Survey_trivia-nodejs-V2_CLI-3_Convert_WW_beginnersdevs&sc_segment=beginnersdevs) for more information.
+   See the Skill [Manifest Documentation](https://developer.amazon.com/docs/smapi/skill-manifest.html) for more information.
 
-2. ```./lambda/custom/index.js```
+2. ```./lambda/custom/resources/*.json```
 
-   Modify messages, and trivia from the source code to customize the skill.
+   Modify messages, and trivia from the resource files to customize the skill.
 
 3. ```./models/*.json```
 

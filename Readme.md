@@ -1,33 +1,21 @@
-Regions: [🇯🇵](../../tree/ja-JP)
-
-
-
-#  Build An Alexa Trivia Skill 🇺🇸
+#  Build An Alexa Trivia Skill with the Jargon SDK
 <img src="https://m.media-amazon.com/images/G/01/mobile-apps/dex/alexa/alexa-skills-kit/tutorials/fact/header._TTH_.png" />
 
+This is a fork of the [Alexa Trivia skill template](https://github.com/alexa/skill-sample-nodejs-trivia#readme) template that uses the [Jargon SDK](https://github.com/JargonInc/jargon-sdk-nodejs/tree/master/packages/alexa-skill-sdk#readme) to manage content.
 
+This template makes use of the SDK's ability to render resource objects to store the questions separate from the
+source code to make it easier to change the questions for different locales.
 
-This Alexa sample skill is a template for a basic trivia skill. Provided a list of interesting questions about a topic, Alexa will select a question at random and ask it of the user when the skill is invoked.
+## Changes from the source template
+* Add dependency on the Jargon SDK npm package (@jargon/alexa-skill-sdk)
+* Use the Jargon skill builder during initialization
+* Use the Jargon response builder to construct all responses
+* Move questions response content into language- and locale-specific resource files
+* Various tweaks and bug fixes
 
-<!-- If you would like to see an example of this skill in action, you can enable the [Gloucester Facts](https://www.amazon.com/Robert-McCauley-Gloucester-Facts/dp/B01I5MOIA2/) from the [Alexa Skill Store](http://amazon.com/skills). -->
+## Instructions
 
+See https://github.com/JargonInc/skill-sample-nodejs-trivia/blob/master/instructions/cli.md for instructions on how to use this template via the ASK CLI.
 
-To **Get Started** click the button below:
+In general the instructions from the source template are also applicable, with the exception that the Lambda needs to be deployed via the CLI to ensure that all dependencies and resources are included.
 
-[![Get Started](https://camo.githubusercontent.com/db9b9ce26327ad3bac57ec4daf0961a382d75790/68747470733a2f2f6d2e6d656469612d616d617a6f6e2e636f6d2f696d616765732f472f30312f6d6f62696c652d617070732f6465782f616c6578612f616c6578612d736b696c6c732d6b69742f7475746f7269616c732f67656e6572616c2f627574746f6e732f627574746f6e5f6765745f737461727465642e5f5454485f2e706e67)](./instructions/1-voice-user-interface.md)
-
-Or click [here](./instructions/7-cli.md) for instructions using the ASK CLI (command line interface).
-
-## Additional Resources
-
-### Community
-* [Amazon Developer Forums](https://forums.developer.amazon.com/spaces/165/index.html) - Join the conversation!
-* [Hackster.io](https://www.hackster.io/amazon-alexa) - See what others are building with Alexa.
-
-### Tutorials & Guides
-* [Voice Design Guide](https://developer.amazon.com/designing-for-voice/) - A great resource for learning conversational and voice user interface design.
-* [Codecademy: Learn Alexa](https://www.codecademy.com/learn/learn-alexa) - Learn how to build an Alexa Skill from within your browser with this beginner friendly tutorial on Codecademy!
-
-### Documentation
-* [Official Alexa Skills Kit Node.js SDK](https://www.npmjs.com/package/ask-sdk) - The Official Node.js SDK Documentation
-*  [Official Alexa Skills Kit Documentation](https://developer.amazon.com/docs/ask-overviews/build-skills-with-the-alexa-skills-kit.html) - Official Alexa Skills Kit Documentation
