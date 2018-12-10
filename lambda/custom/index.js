@@ -3,6 +3,7 @@
 
 const Alexa = require('ask-sdk-core');
 const Jargon = require('@jargon/alexa-skill-sdk');
+const ri = Jargon.ri
 
 // Note that if you change this value you also need to update TELL_QUESTION_MESSAGE
 // in all resources to have the correct number of answer placeholders
@@ -91,7 +92,7 @@ function buildQuestionRenderItem(questionNumber, question, answers) {
 }
 
 async function handleUserGuess(userGaveUp, handlerInput) {
-  const { requestEnvelope, attributesManager, jrb } = handlerInput;
+  const { requestEnvelope, attributesManager, jrb, jrm } = handlerInput;
   const { intent } = requestEnvelope.request;
 
   const answerSlotValid = isAnswerSlotValid(intent);
@@ -118,7 +119,7 @@ async function handleUserGuess(userGaveUp, handlerInput) {
   // Check if we can exit the game session after GAME_LENGTH questions (zero-indexed)
   if (sessionAttributes.currentQuestionIndex === GAME_LENGTH - 1) {
     return jrb
-      .speak(ri('GAME_OVER_MESSAGE'), { score: currentScore, numberOfQuestions: GAME_LENGTH })
+      .speak(ri('GAME_OVER_MESSAGE', { score: currentScore, numberOfQuestions: GAME_LENGTH }))
       .getResponse();
   }
 
@@ -127,7 +128,7 @@ async function handleUserGuess(userGaveUp, handlerInput) {
   currentQuestionIndex += 1;
   correctAnswerIndex = Math.floor(Math.random() * (ANSWER_COUNT));
 
-  const translatedQuestions = await handlerInput.jrm.renderObject(ri('QUESTIONS'));
+  const translatedQuestions = await jrm.renderObject(ri('QUESTIONS'));
   const spokenQuestion = Object.keys(translatedQuestions[gameQuestions[currentQuestionIndex]])[0];
   const roundAnswers = populateRoundAnswers(
     gameQuestions,
@@ -138,7 +139,6 @@ async function handleUserGuess(userGaveUp, handlerInput) {
 
   const questionIndexForSpeech = currentQuestionIndex + 1;
   const questionRI = buildQuestionRenderItem(questionIndexForSpeech, spokenQuestion, roundAnswers)
-  jrb.speak(questionRI).reprompt(questionRI)
 
   const translatedQuestion = translatedQuestions[gameQuestions[currentQuestionIndex]];
   const questionText = await handlerInput.jrm.render(questionRI)
@@ -154,6 +154,7 @@ async function handleUserGuess(userGaveUp, handlerInput) {
   });
 
   return jrb
+    .speak(questionRI)
     .reprompt(questionRI)
     .withSimpleCard(ri('GAME_NAME'), questionRI)
     .getResponse();
@@ -171,7 +172,7 @@ async function startGame(newGame, handlerInput) {
   const currentQuestionIndex = 0;
   const correctAnswerIndex = Math.floor(Math.random() * (ANSWER_COUNT));
 
-  const translatedQuestions = await jrb.renderObject(ri('QUESTIONS'));
+  const translatedQuestions = await jrm.renderObject(ri('QUESTIONS'));
   const gameQuestions = populateGameQuestions(translatedQuestions);
 
   const spokenQuestion = Object.keys(translatedQuestions[gameQuestions[currentQuestionIndex]])[0];
@@ -184,7 +185,6 @@ async function startGame(newGame, handlerInput) {
 
   const questionIndexForSpeech = currentQuestionIndex + 1;
   const questionRI = buildQuestionRenderItem(questionIndexForSpeech, spokenQuestion, roundAnswers)
-  jrb.speak(questionRI).reprompt(questionRI)
 
   const translatedQuestion = translatedQuestions[gameQuestions[currentQuestionIndex]];
   const questionText = await handlerInput.jrm.render(questionRI)
@@ -195,12 +195,13 @@ async function startGame(newGame, handlerInput) {
     currentQuestionIndex: currentQuestionIndex,
     correctAnswerIndex: correctAnswerIndex + 1,
     questions: gameQuestions,
-    score: currentScore,
+    score: 0,
     correctAnswerText: translatedQuestion[Object.keys(translatedQuestion)[0]][0]
   };
   handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
   return jrb
+    .speak(questionRI)
     .reprompt(questionRI)
     .withSimpleCard(ri('GAME_NAME'), questionRI)
     .getResponse();
@@ -396,7 +397,7 @@ const ErrorHandler = {
     return true;
   },
   handle(handlerInput, error) {
-    console.log(`Error handled: ${error.message}`);
+    console.log(`Error handled: ${error.message}: ${error.stack}`);
 
     const speechOutput = ri('ERROR_MESSAGE');
     return handlerInput.jrb
