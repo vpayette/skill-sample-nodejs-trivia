@@ -15,7 +15,7 @@ source code to make it easier to change the questions for different locales.
 
 ## Instructions
 
-See https://github.com/JargonInc/skill-sample-nodejs-trivia/blob/master/instructions/cli.md for instructions on how to use this template via the ASK CLI.
+See https://github.com/JargonInc/skill-sample-nodejs-trivia/blob/en-US/instructions/cli.md for instructions on how to use this template via the ASK CLI.
 
 In general the instructions from the source template are also applicable, with the exception that the Lambda needs to be deployed via the CLI to ensure that all dependencies and resources are included.
 
