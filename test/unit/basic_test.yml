@@ -1,0 +1,24 @@
+#=====================================================================================================================
+#     ______    _ ____  ______        __  _
+#    / __/ /__ (_) / / /_  __/__ ___ / /_(_)__  ___ _
+#   _\ \/  '_// / / /   / / / -_|_-</ __/ / _ \/ _ `/
+#  /___/_/\_\/_/_/_/   /_/  \__/___/\__/_/_//_/\_, /
+#                                             /___/
+#
+# Created by Bespoken
+# Learn more at https://read.bespoken.io/unit-testing/getting-started/
+#
+# Skill name: "skill sample nodejs trivia" by Amazon
+# Test scope: AMAZON.StopIntent
+# Description: Test the basic search functionality
+#=====================================================================================================================
+
+---
+configuration:
+  dynamo: mock
+
+---
+- test: AMAZON.StopIntent works properly
+- AMAZON.StopIntent:
+  - response.outputSpeech.ssml: Would you like to keep playing?
+  
