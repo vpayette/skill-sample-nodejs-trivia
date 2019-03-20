@@ -1,2 +1,5 @@
 node_modules
 test_output
+/.github/
+lambda/custom/package-lock.json
+.vscode/launch.json
